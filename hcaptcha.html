@@ -10,20 +10,17 @@
       height: 100vh;
       background: #090221;
     }
-    #token {
-      color: white;
-      margin-top: 20px;
-    }
-    #token-response {
-      display: none; /* Hide the element */
+    #c {
+      position: absolute;
+      top: 0;
+      left: 0;
+      padding: 20px;
     }
   </style>
 </head>
 <body>
   <div id="c"></div>
-  <div id="token"></div> <!-- Div to display the token -->
-  <div id="token-response"></div> <!-- Hidden div to store the token -->
-  
+   <div id="token-response"></div> 
   <script>
     function hcOnLoad() {
       const k = new URLSearchParams(location.search).get("sitekey");
