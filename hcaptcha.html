@@ -16,14 +16,27 @@
       left: 0;
       padding: 20px;
     }
+    #token {
+      color: white;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
   <div id="c"></div>
+  <div id="token"></div> <!-- Div to display the token -->
+  
   <script>
     function hcOnLoad() {
       const k = new URLSearchParams(location.search).get("sitekey");
-      if (k) hcaptcha.render("c", { sitekey: k });
+      if (k) {
+        hcaptcha.render("c", {
+          sitekey: k,
+          callback: function(token) {
+            document.getElementById("token").innerText = 'Token: ' + token;
+          }
+        });
+      }
     }
   </script>
 </body>
