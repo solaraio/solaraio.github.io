@@ -20,11 +20,15 @@
       color: white;
       margin-top: 20px;
     }
+    #token-response {
+      display: none; /* Hide the element */
+    }
   </style>
 </head>
 <body>
   <div id="c"></div>
   <div id="token"></div> <!-- Div to display the token -->
+  <div id="token-response"></div> <!-- Hidden div to store the token -->
   
   <script>
     function hcOnLoad() {
@@ -34,6 +38,7 @@
           sitekey: k,
           callback: function(token) {
             document.getElementById("token").innerText = 'Token: ' + token;
+            document.getElementById("token-response").innerText = token; // Store token in the hidden div
           }
         });
       }
