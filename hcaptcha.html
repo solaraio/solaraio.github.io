@@ -10,12 +10,6 @@
       height: 100vh;
       background: #090221;
     }
-    #c {
-      position: absolute;
-      top: 0;
-      left: 0;
-      padding: 20px;
-    }
     #token {
       color: white;
       margin-top: 20px;
@@ -37,7 +31,6 @@
         hcaptcha.render("c", {
           sitekey: k,
           callback: function(token) {
-            document.getElementById("token").innerText = 'Token: ' + token;
             document.getElementById("token-response").innerText = token; // Store token in the hidden div
           }
         });
