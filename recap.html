@@ -1,14 +1,66 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>reCAPTCHA v2 Example</title>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <title>reCAPTCHA v2 Invisible - Auto-Execution</title>
+    <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit" async defer></script>
+    <style>
+        #recaptcha-response {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+        }
+    </style>
 </head>
 <body>
-    <form action="?" method="POST">
-        <div class="g-recaptcha" data-sitekey="6Lfhue0UAAAAANw5WRT7gmK4eFCQ-FaNCiMlH2QQ"></div>
-        <br/>
-        <input type="submit" value="Submit">
-    </form>
+    <h1>reCAPTCHA v2 Invisible</h1>
+    <p>La vérification se lance automatiquement.</p>
+    
+    <!-- Conteneur pour reCAPTCHA -->
+    <div id="recaptcha-container"></div>
+    
+    <!-- Afficher la réponse -->
+    <div id="recaptcha-response"></div>
+
+    <script>
+        // Fonction appelée quand reCAPTCHA est prêt
+        function onRecaptchaLoad() {
+            // Configuration de reCAPTCHA (invisible)
+            grecaptcha.render('recaptcha-container', {
+                sitekey: '6Lfhue0UAAAAANw5WRT7gmK4eFCQ-FaNCiMlH2QQ',
+                size: 'invisible',
+                callback: onRecaptchaSuccess, // Fonction appelée après succès
+                'expired-callback': onRecaptchaExpired,
+                'error-callback': onRecaptchaError
+            });
+
+            // Lance reCAPTCHA automatiquement
+            grecaptcha.execute();
+        }
+
+        // Callback en cas de succès
+        function onRecaptchaSuccess(token) {
+            console.log("reCAPTCHA token:", token);
+            document.getElementById('recaptcha-response').innerHTML = 
+                `<strong>Token reCAPTCHA:</strong> ${token}`;
+            
+            // Envoyer le token à votre serveur (ex: via fetch())
+            // fetch('/verify-recaptcha', { method: 'POST', body: { token } });
+        }
+
+        // Callback en cas d'expiration
+        function onRecaptchaExpired() {
+            console.log("reCAPTCHA expired");
+            document.getElementById('recaptcha-response').innerHTML = 
+                "reCAPTCHA expiré. Rechargez la page pour réessayer.";
+        }
+
+        // Callback en cas d'erreur
+        function onRecaptchaError() {
+            console.log("reCAPTCHA error");
+            document.getElementById('recaptcha-response').innerHTML = 
+                "Erreur reCAPTCHA. Rechargez la page.";
+        }
+    </script>
 </body>
 </html>
