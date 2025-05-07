@@ -26,35 +26,41 @@
       overflow: hidden;
       color: white;
       position: relative;
+      background-color: var(--bg-dark);
     }
     
-    /* Premium gradient background matching the banner */
-    body:before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+    /* Modern gradient background matching the brand image */
+    body {
       background: 
-        radial-gradient(ellipse at bottom, rgba(0, 229, 153, 0.15), transparent 60%),
-        linear-gradient(0deg, rgba(9, 2, 33, 1) 0%, rgba(11, 30, 45, 0.9) 100%);
-      z-index: -1;
+        radial-gradient(circle at 50% 0%, rgba(0, 229, 153, 0.15), transparent 50%),
+        linear-gradient(180deg, rgba(9, 2, 33, 1) 0%, rgba(7, 21, 40, 1) 100%);
+      position: relative;
     }
     
-    /* Subtle curves mimicking the banner */
-    body:after {
-      content: '';
+    /* Abstract curves for modern tech feel */
+    .bg-shape {
       position: absolute;
-      left: -10%;
-      bottom: -5%;
-      width: 120%;
-      height: 100%;
-      background: radial-gradient(ellipse at left bottom, rgba(0, 229, 153, 0.05) 0%, transparent 70%);
-      border-radius: 50%;
-      transform: rotate(-5deg);
       z-index: -1;
       pointer-events: none;
+    }
+    
+    .bg-shape-1 {
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(0, 229, 153, 0.04), transparent 70%);
+      top: -250px;
+      left: -150px;
+      transform: rotate(-15deg);
+    }
+    
+    .bg-shape-2 {
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(0, 229, 153, 0.03), transparent 70%);
+      bottom: -200px;
+      right: -100px;
     }
     
     .container {
@@ -64,6 +70,8 @@
       flex-direction: column;
       align-items: center;
       padding: 20px;
+      position: relative;
+      overflow: hidden;
     }
     
     .logo-container {
@@ -94,6 +102,7 @@
       flex-direction: column;
       align-items: center;
       margin-top: 55px; /* Push the captcha down further */
+      overflow: visible;
     }
     
     #captcha-widget {
@@ -141,6 +150,11 @@
       background-color: #F44336;
     }
     
+    /* Force hCaptcha to stay within bounds */
+    .h-captcha iframe {
+      max-width: 100%;
+    }
+    
     /* Animations */
     @keyframes pulse {
       0% { opacity: 1; }
@@ -159,15 +173,21 @@
       }
     }
     
-    /* Ensure hCaptcha is properly centered */
+    /* Ensure hCaptcha is properly centered and contained */
     .h-captcha {
       display: flex !important;
       justify-content: center !important;
       margin: 0 auto !important;
+      max-width: 100% !important;
+      overflow: visible !important;
     }
   </style>
 </head>
 <body>
+  <!-- Background shapes for modern look -->
+  <div class="bg-shape bg-shape-1"></div>
+  <div class="bg-shape bg-shape-2"></div>
+  
   <div class="container">
     <div class="logo-container">
       <img src="https://solaraio.github.io/logo.png" alt="Solar Logo" class="logo">
@@ -265,6 +285,9 @@
           'open-callback': function() {
             captchaState = 'opened';
             updateStatus('Challenge opened', 'loading');
+            
+            // Fix potential scroll issues when captcha opens
+            setTimeout(fixScrollIssues, 100);
           },
           'close-callback': function() {
             if (captchaState !== 'success') {
@@ -292,22 +315,40 @@
       }
     }
     
+    // Ensure no scrolling occurs
+    function fixScrollIssues() {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      
+      // Find all possible scrollable elements in hCaptcha
+      const hcaptchaFrames = document.querySelectorAll('iframe[src*="hcaptcha.com"]');
+      hcaptchaFrames.forEach(frame => {
+        // Make sure the frame itself doesn't cause scrolling
+        frame.style.maxHeight = '100%';
+        frame.style.maxWidth = '100%';
+      });
+    }
+    
     // Efficient center styling function
     function applyCenterStyling() {
       document.querySelectorAll('.h-captcha').forEach(el => {
         el.style.display = 'flex';
         el.style.justifyContent = 'center';
         el.style.margin = '0 auto';
+        el.style.maxWidth = '100%';
+        el.style.overflow = 'visible';
       });
       
       document.querySelectorAll('iframe[src*="hcaptcha.com"]').forEach(iframe => {
         iframe.style.margin = '0 auto';
+        iframe.style.maxWidth = '100%';
       });
     }
     
     // Optimized observer for DOM changes
     const observer = new MutationObserver(() => {
       applyCenterStyling();
+      fixScrollIssues();
     });
     
     observer.observe(document.body, {
@@ -322,6 +363,12 @@
       }
     });
     
+    // Prevent scrolling
+    document.addEventListener('DOMContentLoaded', function() {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    });
+    
     // Final styling check when loaded
     window.addEventListener('load', function() {
       const captchaElement = document.querySelector('#captcha-widget');
@@ -329,6 +376,7 @@
         captchaElement.style.margin = '0 auto';
       }
       applyCenterStyling();
+      fixScrollIssues();
     });
   </script>
 </body>
