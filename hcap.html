@@ -38,12 +38,10 @@
       right: 0;
       bottom: 0;
       background: 
-        radial-gradient(circle at 5% 10%, rgba(0, 229, 153, 0.25), transparent 35%),
-        radial-gradient(circle at 95% 15%, rgba(0, 229, 153, 0.2), transparent 40%),
-        radial-gradient(circle at 80% 80%, rgba(0, 229, 153, 0.18), transparent 45%),
-        radial-gradient(circle at 20% 60%, rgba(0, 229, 153, 0.15), transparent 40%),
-        radial-gradient(ellipse at bottom, rgba(0, 229, 153, 0.1), transparent 80%),
-        linear-gradient(135deg, rgba(9, 2, 33, 0.9), rgba(15, 22, 56, 0.85));
+        radial-gradient(circle at 5% 10%, rgba(0, 229, 153, 0.2), transparent 30%),
+        radial-gradient(circle at 95% 15%, rgba(0, 229, 153, 0.18), transparent 35%),
+        linear-gradient(180deg, rgba(9, 2, 33, 0.95) 0%, rgba(15, 22, 56, 0.9) 100%),
+        radial-gradient(ellipse at bottom, rgba(0, 229, 153, 0.15), transparent 70%);
       z-index: -1;
     }
     
@@ -75,7 +73,6 @@
       display: flex;
       justify-content: center;
       margin-bottom: 35px;
-      /* Faster animation for logo */
       animation: slide-from-top 0.6s ease-out forwards;
       transform-origin: center top;
     }
@@ -98,6 +95,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      margin-top: 15px; /* Push the captcha down slightly */
     }
     
     #captcha-widget {
@@ -180,7 +178,7 @@
       <div id="captcha-widget"></div>
       <div class="status">
         <span class="status-indicator loading"></span>
-        <span id="status-text">Verification in progress...</span>
+        <span id="status-text">Initializing...</span>
       </div>
     </div>
     
@@ -188,6 +186,12 @@
   </div>
   
   <script>
+    // Global variables
+    let captchaInitialized = false;
+    let captchaWidgetId = null;
+    let captchaExecutionTimer = null;
+    let captchaState = 'initializing'; // initializing, ready, opened, success, error
+    
     function updateStatus(message, type) {
       const statusText = document.getElementById('status-text');
       const indicator = document.querySelector('.status-indicator');
@@ -198,103 +202,155 @@
       indicator.classList.add(type);
     }
     
-    // Execute captcha automatically
-    function executeCaptha(widgetId) {
+    // Natural captcha execution
+    function executeCaptha() {
+      if (!captchaWidgetId || captchaState === 'opened') return;
+      
       try {
-        setTimeout(() => {
-          hcaptcha.execute(widgetId);
-        }, 50);
-        return true;
+        clearTimeout(captchaExecutionTimer);
+        hcaptcha.execute(captchaWidgetId);
+        captchaState = 'opened';
       } catch (e) {
         console.error('Execution failed:', e);
-        return false;
+        captchaState = 'error';
+        updateStatus('Verification error', 'error');
+        
+        // Retry after a delay
+        captchaExecutionTimer = setTimeout(() => {
+          captchaState = 'ready';
+          executeCaptha();
+        }, 2000);
       }
     }
     
     function hcOnLoad() {
-      updateStatus('Initializing...', 'loading');
+      updateStatus('Preparing verification...', 'loading');
       
-      const k = new URLSearchParams(location.search).get("sitekey");
+      const sitekey = new URLSearchParams(location.search).get("sitekey");
       
-      if (!k) {
+      if (!sitekey) {
         updateStatus('Error: Missing sitekey parameter', 'error');
         return;
       }
       
       try {
-        // Render captcha widget
-        const widgetId = hcaptcha.render("captcha-widget", {
-          sitekey: k,
+        // Render captcha widget with natural behavior
+        captchaWidgetId = hcaptcha.render("captcha-widget", {
+          sitekey: sitekey,
+          theme: 'dark',
+          size: 'normal',
           callback: function(token) {
             // Store token but don't display it
             document.getElementById("token-response").innerText = token;
+            captchaState = 'success';
             updateStatus('Verification complete', 'success');
           },
           'error-callback': function() {
+            captchaState = 'error';
             updateStatus('Verification error', 'error');
-            // Try auto-execute again after error
-            setTimeout(() => executeCaptha(widgetId), 500);
+            
+            // Wait before trying again
+            captchaExecutionTimer = setTimeout(() => {
+              captchaState = 'ready';
+              executeCaptha();
+            }, 3000);
+          },
+          'expired-callback': function() {
+            captchaState = 'ready';
+            updateStatus('Verification expired', 'loading');
+            
+            // Wait a bit before executing again
+            captchaExecutionTimer = setTimeout(executeCaptha, 1500);
           },
           'chalexpired-callback': function() {
+            captchaState = 'ready';
             updateStatus('Challenge expired', 'loading');
-            // Try auto-execute again after expiration
-            setTimeout(() => executeCaptha(widgetId), 300);
+            
+            // Wait a bit before executing again
+            captchaExecutionTimer = setTimeout(executeCaptha, 1500);
           },
           'open-callback': function() {
+            captchaState = 'opened';
             updateStatus('Challenge opened', 'loading');
+          },
+          'close-callback': function() {
+            // If closed without success, we'll retry after a delay
+            if (captchaState !== 'success') {
+              captchaState = 'ready';
+              updateStatus('Awaiting verification...', 'loading');
+              
+              // Natural delay before trying again
+              captchaExecutionTimer = setTimeout(executeCaptha, 2500);
+            }
           }
         });
         
-        // Force auto-execution with multiple attempts
-        const attempts = [50, 200, 400, 800];
-        attempts.forEach(delay => {
-          setTimeout(() => executeCaptha(widgetId), delay);
-        });
-        
-        // Apply center styling to any hCaptcha elements
-        function applyCenterStyling() {
-          const hcaptchaElements = document.querySelectorAll('.h-captcha');
-          hcaptchaElements.forEach(el => {
-            el.style.display = 'flex';
-            el.style.justifyContent = 'center';
-            el.style.margin = '0 auto';
-          });
-          
-          const iframes = document.querySelectorAll('iframe[src*="hcaptcha.com"]');
-          iframes.forEach(iframe => {
-            iframe.style.margin = '0 auto';
-          });
-        }
-        
-        // Apply styling multiple times to ensure it sticks
+        // Apply center styling
         applyCenterStyling();
-        setTimeout(applyCenterStyling, 100);
-        setTimeout(applyCenterStyling, 500);
         
-        // Watch for iframe to ensure proper styling
-        const observer = new MutationObserver(() => {
-          applyCenterStyling();
-        });
+        // Wait a natural amount of time before launching the captcha
+        updateStatus('Ready for verification...', 'loading');
+        captchaState = 'ready';
         
-        observer.observe(document.body, {
-          childList: true,
-          subtree: true,
-          attributes: true
-        });
+        // Execute captcha with a natural delay
+        captchaExecutionTimer = setTimeout(executeCaptha, 800);
         
+        captchaInitialized = true;
       } catch (e) {
         updateStatus('Initialization error', 'error');
         console.error(e);
       }
     }
     
-    // Apply additional centering when everything is loaded
+    // Apply centering to captcha elements
+    function applyCenterStyling() {
+      const hcaptchaElements = document.querySelectorAll('.h-captcha');
+      hcaptchaElements.forEach(el => {
+        el.style.display = 'flex';
+        el.style.justifyContent = 'center';
+        el.style.margin = '0 auto';
+      });
+      
+      const iframes = document.querySelectorAll('iframe[src*="hcaptcha.com"]');
+      iframes.forEach(iframe => {
+        iframe.style.margin = '0 auto';
+      });
+    }
+    
+    // Watch for captcha elements being added
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          applyCenterStyling();
+        }
+      }
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+    
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && captchaInitialized) {
+        // If page becomes visible and captcha is in ready state, try executing
+        if (captchaState === 'ready') {
+          executeCaptha();
+        }
+      }
+    });
+    
+    // Apply additional centering when loaded
     window.addEventListener('load', function() {
-      // Force immediate captcha auto-launch on page load
+      // Ensure captcha container is centered
       const captchaElement = document.querySelector('#captcha-widget');
       if (captchaElement) {
         captchaElement.style.margin = '0 auto';
       }
+      
+      // Apply centering again to ensure it's applied
+      applyCenterStyling();
     });
   </script>
 </body>
