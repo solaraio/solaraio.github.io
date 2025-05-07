@@ -32,8 +32,9 @@
     /* Modern gradient background matching the brand image */
     body {
       background: 
-        radial-gradient(circle at 50% 0%, rgba(0, 229, 153, 0.15), transparent 50%),
-        linear-gradient(180deg, rgba(9, 2, 33, 1) 0%, rgba(7, 21, 40, 1) 100%);
+        radial-gradient(circle at 70% 10%, rgba(0, 229, 153, 0.12), transparent 60%),
+        radial-gradient(circle at 20% 80%, rgba(0, 229, 153, 0.08), transparent 50%),
+        linear-gradient(140deg, rgba(9, 2, 33, 1) 0%, rgba(11, 35, 55, 1) 100%);
       position: relative;
     }
     
@@ -45,22 +46,41 @@
     }
     
     .bg-shape-1 {
-      width: 600px;
-      height: 600px;
+      width: 650px;
+      height: 650px;
       border-radius: 50%;
-      background: radial-gradient(ellipse at center, rgba(0, 229, 153, 0.04), transparent 70%);
-      top: -250px;
+      background: radial-gradient(ellipse at center, rgba(0, 229, 153, 0.06), transparent 70%);
+      top: -300px;
       left: -150px;
       transform: rotate(-15deg);
+      filter: blur(30px);
     }
     
     .bg-shape-2 {
-      width: 400px;
-      height: 400px;
+      width: 500px;
+      height: 500px;
       border-radius: 50%;
-      background: radial-gradient(ellipse at center, rgba(0, 229, 153, 0.03), transparent 70%);
-      bottom: -200px;
-      right: -100px;
+      background: radial-gradient(ellipse at center, rgba(0, 229, 153, 0.05), transparent 70%);
+      bottom: -250px;
+      right: -150px;
+      filter: blur(20px);
+    }
+    
+    /* Subtle grid overlay for tech feel */
+    .container::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        linear-gradient(rgba(0, 229, 153, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 229, 153, 0.03) 1px, transparent 1px);
+      background-size: 30px 30px;
+      z-index: -1;
+      opacity: 0.4;
+      pointer-events: none;
     }
     
     .container {
@@ -87,13 +107,19 @@
       width: 90px;
       height: auto;
       transition: all 0.3s ease;
-      filter: drop-shadow(0 0 6px rgba(0, 229, 153, 0.4));
+      filter: drop-shadow(0 0 10px rgba(0, 229, 153, 0.5));
+      animation: subtle-float 6s ease-in-out infinite;
     }
     
     /* Logo hover animation */
     .logo:hover {
       transform: translateY(-3px);
-      filter: drop-shadow(0 0 15px rgba(0, 229, 153, 0.6));
+      filter: drop-shadow(0 0 20px rgba(0, 229, 153, 0.7));
+    }
+    
+    @keyframes subtle-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
     }
     
     .captcha-container {
@@ -113,15 +139,18 @@
     
     .status {
       margin-top: 20px;
-      padding: 10px;
+      padding: 12px;
       border-radius: var(--border-radius);
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(9, 2, 33, 0.7);
       font-size: 14px;
       text-align: center;
       width: 100%;
       max-width: 300px;
-      backdrop-filter: blur(5px);
-      border: 1px solid rgba(0, 229, 153, 0.1);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(0, 229, 153, 0.3);
+      box-shadow: 0 0 20px rgba(0, 229, 153, 0.1);
+      transition: all 0.3s ease;
+      letter-spacing: 0.5px;
     }
     
     #token-response {
@@ -133,21 +162,41 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      margin-right: 8px;
+      margin-right: 10px;
       background-color: #555;
+      position: relative;
+      vertical-align: middle;
+    }
+    
+    /* Subtle glow effect for status indicator */
+    .status-indicator::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background-color: transparent;
+      box-shadow: 0 0 6px currentColor;
+      opacity: 0.5;
     }
     
     .status-indicator.loading {
-      background-color: var(--primary-color);
+      background-color: #FF9500;
       animation: pulse 1.5s infinite;
+      box-shadow: 0 0 5px rgba(255, 149, 0, 0.7);
     }
     
     .status-indicator.success {
       background-color: var(--primary-color);
+      box-shadow: 0 0 5px rgba(0, 229, 153, 0.7);
     }
     
     .status-indicator.error {
       background-color: #F44336;
+      box-shadow: 0 0 5px rgba(244, 67, 54, 0.7);
     }
     
     /* Force hCaptcha to stay within bounds */
@@ -157,9 +206,9 @@
     
     /* Animations */
     @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.5; }
-      100% { opacity: 1; }
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.1); }
+      100% { opacity: 1; transform: scale(1); }
     }
     
     @keyframes slide-from-top {
@@ -187,6 +236,11 @@
   <!-- Background shapes for modern look -->
   <div class="bg-shape bg-shape-1"></div>
   <div class="bg-shape bg-shape-2"></div>
+  <!-- Additional subtle accent lines -->
+  <svg class="accent-lines" width="100%" height="100%" style="position: absolute; top: 0; left: 0; z-index: -1; opacity: 0.2;" xmlns="http://www.w3.org/2000/svg">
+    <line x1="0" y1="100" x2="120" y2="100" stroke="#00E599" stroke-width="1" />
+    <line x1="240" y1="450" x2="360" y2="450" stroke="#00E599" stroke-width="1" />
+  </svg>
   
   <div class="container">
     <div class="logo-container">
