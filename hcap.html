@@ -29,7 +29,7 @@
       position: relative;
     }
     
-    /* Enhanced background gradients */
+    /* Enhanced background gradients to match banner */
     body:before {
       content: '';
       position: absolute;
@@ -38,10 +38,10 @@
       right: 0;
       bottom: 0;
       background: 
-        radial-gradient(circle at 10% 10%, rgba(0, 229, 153, 0.08), transparent 40%),
-        radial-gradient(circle at 90% 20%, rgba(0, 229, 153, 0.06), transparent 45%),
-        radial-gradient(circle at 50% 80%, rgba(0, 100, 255, 0.07), transparent 50%),
-        linear-gradient(to bottom, rgba(0, 0, 30, 0.4), transparent 20%);
+        radial-gradient(circle at 20% 20%, rgba(0, 229, 153, 0.15), transparent 40%),
+        radial-gradient(circle at 80% 30%, rgba(0, 229, 153, 0.12), transparent 45%),
+        radial-gradient(circle at 50% 70%, rgba(0, 229, 153, 0.08), transparent 50%),
+        linear-gradient(to bottom, rgba(0, 16, 32, 0.6), transparent 35%);
       z-index: -1;
     }
     
@@ -57,26 +57,23 @@
     .logo-container {
       width: 100%;
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 40px;
-      /* Animation for logo appearing from top */
-      animation: slide-from-top 1.2s ease-out forwards;
+      justify-content: center;
+      margin-bottom: 35px;
+      /* Faster animation for logo */
+      animation: slide-from-top 0.6s ease-out forwards;
       transform-origin: center top;
     }
     
     .logo {
       width: 90px;
       height: auto;
-      transition: all 0.4s ease;
-      transform-style: preserve-3d;
-      perspective: 500px;
-      filter: drop-shadow(0 0 4px rgba(0, 229, 153, 0.3));
+      transition: all 0.3s ease;
+      filter: drop-shadow(0 0 6px rgba(0, 229, 153, 0.4));
     }
     
     /* Logo hover animation */
     .logo:hover {
-      transform: translateY(-5px) rotateY(10deg);
+      transform: translateY(-3px);
       filter: drop-shadow(0 0 15px rgba(0, 229, 153, 0.6));
     }
     
@@ -140,7 +137,7 @@
     
     @keyframes slide-from-top {
       0% { 
-        transform: translateY(-80px);
+        transform: translateY(-50px);
         opacity: 0;
       }
       100% { 
@@ -151,9 +148,9 @@
     
     /* Ensure hCaptcha is properly centered */
     .h-captcha {
-      display: flex;
-      justify-content: center;
-      margin: 0 auto;
+      display: flex !important;
+      justify-content: center !important;
+      margin: 0 auto !important;
     }
   </style>
 </head>
@@ -185,77 +182,19 @@
       indicator.classList.add(type);
     }
     
-    // Global flag to track if captcha has been launched by user
-    let captchaLaunched = false;
-    
-    // Optimized execute function to avoid re-launching if already started
-    function attemptExecute(widgetId) {
-      if (captchaLaunched) {
-        console.log('Captcha already launched by user, skipping auto-execution');
-        return true;
-      }
-      
+    // Execute captcha automatically
+    function executeCaptha(widgetId) {
       try {
-        // Check if the iframe is already visible/active
-        const captchaIframe = document.querySelector('.h-captcha iframe');
-        if (captchaIframe && captchaIframe.style.visibility === 'visible') {
-          console.log('Captcha appears to be already active');
-          captchaLaunched = true;
-          return true;
-        }
-        
-        // Check if there's any challenge window open
-        if (document.querySelector('iframe[src*="hcaptcha.com/captcha"]')) {
-          console.log('Challenge window detected, not re-launching');
-          captchaLaunched = true;
-          return true;
-        }
-        
-        // Execute if not already launched
-        hcaptcha.execute(widgetId);
-        updateStatus('Verification in progress...', 'loading');
-        captchaLaunched = true;
+        setTimeout(() => {
+          hcaptcha.execute(widgetId);
+        }, 50);
         return true;
       } catch (e) {
-        console.log('Execution attempt failed, will retry');
+        console.error('Execution failed:', e);
         return false;
       }
     }
     
-    // Observer to monitor user interaction with captcha
-    function setupCaptchaObserver() {
-      // Watch for user clicks on captcha elements
-      document.addEventListener('click', function(e) {
-        if (e.target.closest('.h-captcha') || e.target.tagName === 'IFRAME') {
-          captchaLaunched = true;
-          console.log('User interaction with captcha detected');
-        }
-      }, true);
-      
-      // Watch for iframe visibility changes
-      const captchaObserver = new MutationObserver((mutations) => {
-        mutations.forEach(mutation => {
-          if (mutation.target.tagName === 'IFRAME' && 
-              (mutation.target.src.includes('hcaptcha.com') || 
-               (mutation.target.parentElement && mutation.target.parentElement.classList.contains('h-captcha')))) {
-            captchaLaunched = true;
-          }
-        });
-      });
-      
-      // Start observing once hCaptcha elements exist
-      setTimeout(() => {
-        const hcaptchaEl = document.querySelector('.h-captcha');
-        if (hcaptchaEl) {
-          captchaObserver.observe(hcaptchaEl, { 
-            attributes: true, 
-            childList: true,
-            subtree: true 
-          });
-        }
-      }, 500);
-    }
-  
     function hcOnLoad() {
       updateStatus('Initializing...', 'loading');
       
@@ -267,58 +206,64 @@
       }
       
       try {
-        // Set up optimal environment for captcha solving
+        // Render captcha widget
         const widgetId = hcaptcha.render("captcha-widget", {
           sitekey: k,
           callback: function(token) {
             // Store token but don't display it
             document.getElementById("token-response").innerText = token;
-            
-            // Update status to success
             updateStatus('Verification complete', 'success');
           },
           'error-callback': function() {
             updateStatus('Verification error', 'error');
-            captchaLaunched = false; // Reset flag to allow retrying
+            // Try auto-execute again after error
+            setTimeout(() => executeCaptha(widgetId), 500);
           },
           'chalexpired-callback': function() {
             updateStatus('Challenge expired', 'loading');
-            captchaLaunched = false; // Reset flag to allow retrying
+            // Try auto-execute again after expiration
+            setTimeout(() => executeCaptha(widgetId), 300);
           },
           'open-callback': function() {
-            captchaLaunched = true; // Mark as launched when challenge opens
+            updateStatus('Challenge opened', 'loading');
           }
         });
         
-        // Set up observer for user interactions
-        setupCaptchaObserver();
-        
-        // More reliable execution strategy with progressive delays
-        const executionAttempts = [100, 300, 600, 1000, 1500];
-        
-        executionAttempts.forEach((delay, index) => {
-          setTimeout(() => {
-            if (!captchaLaunched) {
-              attemptExecute(widgetId);
-            }
-          }, delay);
+        // Force auto-execution with multiple attempts
+        const attempts = [50, 200, 400, 800];
+        attempts.forEach(delay => {
+          setTimeout(() => executeCaptha(widgetId), delay);
         });
+        
+        // Apply center styling to any hCaptcha elements
+        function applyCenterStyling() {
+          const hcaptchaElements = document.querySelectorAll('.h-captcha');
+          hcaptchaElements.forEach(el => {
+            el.style.display = 'flex';
+            el.style.justifyContent = 'center';
+            el.style.margin = '0 auto';
+          });
+          
+          const iframes = document.querySelectorAll('iframe[src*="hcaptcha.com"]');
+          iframes.forEach(iframe => {
+            iframe.style.margin = '0 auto';
+          });
+        }
+        
+        // Apply styling multiple times to ensure it sticks
+        applyCenterStyling();
+        setTimeout(applyCenterStyling, 100);
+        setTimeout(applyCenterStyling, 500);
         
         // Watch for iframe to ensure proper styling
-        const observer = new MutationObserver((mutations) => {
-          const captchaIframe = document.querySelector('.h-captcha iframe');
-          if (captchaIframe) {
-            // Center and optimize the captcha iframe
-            captchaIframe.style.margin = '0 auto';
-            
-            // Once we see the iframe, we can stop observing
-            observer.disconnect();
-          }
+        const observer = new MutationObserver(() => {
+          applyCenterStyling();
         });
         
         observer.observe(document.body, {
           childList: true,
-          subtree: true
+          subtree: true,
+          attributes: true
         });
         
       } catch (e) {
@@ -327,15 +272,13 @@
       }
     }
     
-    // Apply additional centering and optimization when everything is loaded
+    // Apply additional centering when everything is loaded
     window.addEventListener('load', function() {
-      // Force center any hCaptcha elements
-      const hcaptchaElements = document.querySelectorAll('.h-captcha');
-      hcaptchaElements.forEach(el => {
-        el.style.display = 'flex';
-        el.style.justifyContent = 'center';
-        el.style.margin = '0 auto';
-      });
+      // Force immediate captcha auto-launch on page load
+      const captchaElement = document.querySelector('#captcha-widget');
+      if (captchaElement) {
+        captchaElement.style.margin = '0 auto';
+      }
     });
   </script>
 </body>
