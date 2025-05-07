@@ -38,11 +38,27 @@
       right: 0;
       bottom: 0;
       background: 
-        radial-gradient(circle at 20% 20%, rgba(0, 229, 153, 0.15), transparent 40%),
-        radial-gradient(circle at 80% 30%, rgba(0, 229, 153, 0.12), transparent 45%),
-        radial-gradient(circle at 50% 70%, rgba(0, 229, 153, 0.08), transparent 50%),
-        linear-gradient(to bottom, rgba(0, 16, 32, 0.6), transparent 35%);
+        radial-gradient(circle at 5% 10%, rgba(0, 229, 153, 0.25), transparent 35%),
+        radial-gradient(circle at 95% 15%, rgba(0, 229, 153, 0.2), transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(0, 229, 153, 0.18), transparent 45%),
+        radial-gradient(circle at 20% 60%, rgba(0, 229, 153, 0.15), transparent 40%),
+        radial-gradient(ellipse at bottom, rgba(0, 229, 153, 0.1), transparent 80%),
+        linear-gradient(135deg, rgba(9, 2, 33, 0.9), rgba(15, 22, 56, 0.85));
       z-index: -1;
+    }
+    
+    /* Add subtle noise texture to background */
+    body:after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iLjc1IiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ibWF0cml4IiB2YWx1ZXM9IjAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIC4xIDAiLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWx0ZXI9InVybCgjYSkiLz48L3N2Zz4=');
+      opacity: 0.03;
+      z-index: -1;
+      pointer-events: none;
     }
     
     .container {
@@ -182,17 +198,26 @@
       indicator.classList.add(type);
     }
     
-    // Execute captcha automatically
+    // Enhanced captcha auto-execution
     function executeCaptha(widgetId) {
       try {
-        setTimeout(() => {
-          hcaptcha.execute(widgetId);
-        }, 50);
+        hcaptcha.execute(widgetId);
         return true;
       } catch (e) {
         console.error('Execution failed:', e);
         return false;
       }
+    }
+    
+    // Check if captcha is ready to execute
+    function checkCaptchaReadiness(widgetId) {
+      // Look for any hCaptcha iframe that's loaded
+      const iframes = document.querySelectorAll('iframe[src*="hcaptcha.com"]');
+      if (iframes.length > 0) {
+        executeCaptha(widgetId);
+        return true;
+      }
+      return false;
     }
     
     function hcOnLoad() {
@@ -209,6 +234,7 @@
         // Render captcha widget
         const widgetId = hcaptcha.render("captcha-widget", {
           sitekey: k,
+          size: "invisible", // Force invisible mode for auto-execution
           callback: function(token) {
             // Store token but don't display it
             document.getElementById("token-response").innerText = token;
@@ -217,53 +243,92 @@
           'error-callback': function() {
             updateStatus('Verification error', 'error');
             // Try auto-execute again after error
-            setTimeout(() => executeCaptha(widgetId), 500);
+            setTimeout(() => executeCaptha(widgetId), 200);
           },
           'chalexpired-callback': function() {
             updateStatus('Challenge expired', 'loading');
             // Try auto-execute again after expiration
-            setTimeout(() => executeCaptha(widgetId), 300);
+            setTimeout(() => executeCaptha(widgetId), 200);
           },
           'open-callback': function() {
             updateStatus('Challenge opened', 'loading');
           }
         });
         
-        // Force auto-execution with multiple attempts
-        const attempts = [50, 200, 400, 800];
-        attempts.forEach(delay => {
+        // Multi-layered execution strategy
+        // Immediate execution
+        executeCaptha(widgetId);
+        
+        // Aggressive auto-execution with shorter intervals
+        const executionIntervals = [10, 50, 100, 200, 300, 500, 800, 1200, 2000];
+        executionIntervals.forEach(delay => {
           setTimeout(() => executeCaptha(widgetId), delay);
         });
         
+        // Continuous monitoring for captcha readiness
+        const readinessInterval = setInterval(() => {
+          if (checkCaptchaReadiness(widgetId)) {
+            clearInterval(readinessInterval);
+          }
+        }, 100);
+        
+        // Stop checking after 10 seconds to save resources
+        setTimeout(() => clearInterval(readinessInterval), 10000);
+        
         // Apply center styling to any hCaptcha elements
         function applyCenterStyling() {
+          // Target the container itself
+          const captchaContainer = document.querySelector('#captcha-widget');
+          if (captchaContainer) {
+            captchaContainer.style.display = 'flex';
+            captchaContainer.style.justifyContent = 'center';
+            captchaContainer.style.width = '100%';
+          }
+          
+          // Target hCaptcha elements
           const hcaptchaElements = document.querySelectorAll('.h-captcha');
           hcaptchaElements.forEach(el => {
-            el.style.display = 'flex';
-            el.style.justifyContent = 'center';
-            el.style.margin = '0 auto';
+            el.style.display = 'flex !important';
+            el.style.justifyContent = 'center !important';
+            el.style.margin = '0 auto !important';
+            el.style.width = '100% !important';
           });
           
+          // Target any iframes
           const iframes = document.querySelectorAll('iframe[src*="hcaptcha.com"]');
           iframes.forEach(iframe => {
             iframe.style.margin = '0 auto';
+            iframe.style.display = 'block';
           });
         }
         
-        // Apply styling multiple times to ensure it sticks
+        // Apply styling aggressively
         applyCenterStyling();
-        setTimeout(applyCenterStyling, 100);
-        setTimeout(applyCenterStyling, 500);
+        for (let i = 1; i <= 10; i++) {
+          setTimeout(applyCenterStyling, i * 100);
+        }
         
-        // Watch for iframe to ensure proper styling
-        const observer = new MutationObserver(() => {
+        // Monitor DOM changes for new captcha elements
+        const observer = new MutationObserver((mutations) => {
           applyCenterStyling();
+          
+          // Also check for newly added iframe and relaunch captcha if needed
+          mutations.forEach(mutation => {
+            if (mutation.addedNodes.length) {
+              mutation.addedNodes.forEach(node => {
+                if (node.tagName === 'IFRAME' && node.src && node.src.includes('hcaptcha.com')) {
+                  executeCaptha(widgetId);
+                }
+              });
+            }
+          });
         });
         
         observer.observe(document.body, {
           childList: true,
           subtree: true,
-          attributes: true
+          attributes: true,
+          attributeFilter: ['style', 'class', 'src']
         });
         
       } catch (e) {
@@ -272,12 +337,22 @@
       }
     }
     
-    // Apply additional centering when everything is loaded
+    // Apply additional optimizations when everything is loaded
     window.addEventListener('load', function() {
       // Force immediate captcha auto-launch on page load
       const captchaElement = document.querySelector('#captcha-widget');
       if (captchaElement) {
         captchaElement.style.margin = '0 auto';
+        
+        // Try executing any existing captcha at load time
+        try {
+          const widgetIds = Object.keys(hcaptcha.getResponse());
+          if (widgetIds.length > 0) {
+            widgetIds.forEach(id => executeCaptha(id));
+          }
+        } catch (e) {
+          // Silently ignore if hcaptcha isn't fully initialized yet
+        }
       }
     });
   </script>
