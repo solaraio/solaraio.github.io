@@ -59,7 +59,7 @@
       align-items: center;
     }
     
-    #c {
+    #captcha-widget {
       margin-top: 20px;
     }
     
@@ -79,8 +79,8 @@
     
     .status-indicator {
       display: inline-block;
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       margin-right: 8px;
       background-color: #555;
@@ -113,10 +113,10 @@
     </div>
     
     <div class="captcha-container">
-      <div id="c"></div>
+      <div id="captcha-widget"></div>
       <div class="status">
         <span class="status-indicator loading"></span>
-        <span id="status-text">Chargement du hCaptcha...</span>
+        <span id="status-text">Loading hCaptcha...</span>
       </div>
     </div>
     
@@ -133,51 +133,83 @@
       indicator.classList.remove('loading', 'success', 'error');
       indicator.classList.add(type);
     }
+    
+    // Multiple attempts to execute hCaptcha if the first try fails
+    let executeAttempts = 0;
+    function attemptExecute(widgetId) {
+      try {
+        hcaptcha.execute(widgetId);
+        updateStatus('Verification in progress...', 'loading');
+        return true;
+      } catch (e) {
+        console.log('Execution attempt failed, will retry:', e);
+        executeAttempts++;
+        
+        if (executeAttempts < 5) {
+          setTimeout(() => attemptExecute(widgetId), 300);
+        } else {
+          updateStatus('Ready for verification', 'loading');
+        }
+        return false;
+      }
+    }
   
     function hcOnLoad() {
-      updateStatus('Initialisation du hCaptcha...', 'loading');
+      updateStatus('Initializing...', 'loading');
       
       const k = new URLSearchParams(location.search).get("sitekey");
       
       if (!k) {
-        updateStatus('Erreur: Paramètre sitekey manquant', 'error');
+        updateStatus('Error: Missing sitekey parameter', 'error');
         return;
       }
       
       try {
-        // Render hCaptcha
-        const widgetId = hcaptcha.render("c", {
+        // Use minimal parameters to avoid detection
+        const widgetId = hcaptcha.render("captcha-widget", {
           sitekey: k,
           callback: function(token) {
-            // Store token but don't display it visibly
+            // Store token but don't display it
             document.getElementById("token-response").innerText = token;
             
             // Update status to success
-            updateStatus('Vérification réussie!', 'success');
+            updateStatus('Verification complete', 'success');
             
-            // Optional: Send the token to your server or API here
-            console.log("Token generated:", token);
+            // Optional: You can send the token to your server here
+            console.log("Token generated");
           },
           'error-callback': function() {
-            updateStatus('Erreur lors de la vérification', 'error');
+            updateStatus('Verification error', 'error');
           },
           'chalexpired-callback': function() {
-            updateStatus('Challenge expiré, rechargement...', 'loading');
+            updateStatus('Challenge expired', 'loading');
           }
         });
         
-        // Execute hCaptcha automatically after a short delay
-        setTimeout(function() {
-          try {
-            hcaptcha.execute(widgetId);
-            updateStatus('Lancement de la vérification...', 'loading');
-          } catch (e) {
-            updateStatus('Erreur de lancement', 'error');
-            console.error(e);
+        // Implement multiple execution strategies with increasing delays
+        // First attempt: immediate
+        setTimeout(() => {
+          if (!attemptExecute(widgetId)) {
+            // Try again after DOM is more likely ready
+            setTimeout(() => attemptExecute(widgetId), 200);
           }
-        }, 500);
+        }, 50);
+        
+        // Final fallback attempt with observer
+        const observer = new MutationObserver((mutations) => {
+          if (document.querySelector('.h-captcha iframe')) {
+            observer.disconnect();
+            attemptExecute(widgetId);
+          }
+        });
+        
+        observer.observe(document.getElementById('captcha-widget'), {
+          childList: true,
+          subtree: true
+        });
+        
       } catch (e) {
-        updateStatus('Erreur d\'initialisation', 'error');
+        updateStatus('Initialization error', 'error');
         console.error(e);
       }
     }
