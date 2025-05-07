@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solar hCaptcha</title>
+  <title>Solar hCaptcha Harvester</title>
   <link rel="icon" href="favicon.ico" type="image/x-icon">
   <script src="https://hcaptcha.com/1/api.js?onload=hcOnLoad&render=explicit" async defer></script>
   <style>
@@ -26,6 +26,23 @@
       overflow: hidden;
       background: var(--bg-dark);
       color: white;
+      position: relative;
+    }
+    
+    /* Enhanced background gradients */
+    body:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 10% 10%, rgba(0, 229, 153, 0.08), transparent 40%),
+        radial-gradient(circle at 90% 20%, rgba(0, 229, 153, 0.06), transparent 45%),
+        radial-gradient(circle at 50% 80%, rgba(0, 100, 255, 0.07), transparent 50%),
+        linear-gradient(to bottom, rgba(0, 0, 30, 0.4), transparent 20%);
+      z-index: -1;
     }
     
     .container {
@@ -42,14 +59,25 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-bottom: 30px;
-      margin-top: 20px;
+      margin-bottom: 40px;
+      /* Animation for logo appearing from top */
+      animation: slide-from-top 1.2s ease-out forwards;
+      transform-origin: center top;
     }
     
     .logo {
-      width: 120px;
+      width: 90px;
       height: auto;
-      margin-bottom: 10px;
+      transition: all 0.4s ease;
+      transform-style: preserve-3d;
+      perspective: 500px;
+      filter: drop-shadow(0 0 4px rgba(0, 229, 153, 0.3));
+    }
+    
+    /* Logo hover animation */
+    .logo:hover {
+      transform: translateY(-5px) rotateY(10deg);
+      filter: drop-shadow(0 0 15px rgba(0, 229, 153, 0.6));
     }
     
     .captcha-container {
@@ -60,7 +88,9 @@
     }
     
     #captcha-widget {
-      margin-top: 20px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
     }
     
     .status {
@@ -71,6 +101,8 @@
       font-size: 14px;
       text-align: center;
       width: 100%;
+      max-width: 300px;
+      backdrop-filter: blur(5px);
     }
     
     #token-response {
@@ -87,7 +119,7 @@
     }
     
     .status-indicator.loading {
-      background-color: #FFC107;
+      background-color: var(--primary-color);
       animation: pulse 1.5s infinite;
     }
     
@@ -99,10 +131,29 @@
       background-color: #F44336;
     }
     
+    /* Animations */
     @keyframes pulse {
       0% { opacity: 1; }
       50% { opacity: 0.5; }
       100% { opacity: 1; }
+    }
+    
+    @keyframes slide-from-top {
+      0% { 
+        transform: translateY(-80px);
+        opacity: 0;
+      }
+      100% { 
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    /* Ensure hCaptcha is properly centered */
+    .h-captcha {
+      display: flex;
+      justify-content: center;
+      margin: 0 auto;
     }
   </style>
 </head>
@@ -116,7 +167,7 @@
       <div id="captcha-widget"></div>
       <div class="status">
         <span class="status-indicator loading"></span>
-        <span id="status-text">Loading hCaptcha...</span>
+        <span id="status-text">Verification in progress...</span>
       </div>
     </div>
     
@@ -134,24 +185,75 @@
       indicator.classList.add(type);
     }
     
-    // Multiple attempts to execute hCaptcha if the first try fails
-    let executeAttempts = 0;
+    // Global flag to track if captcha has been launched by user
+    let captchaLaunched = false;
+    
+    // Optimized execute function to avoid re-launching if already started
     function attemptExecute(widgetId) {
+      if (captchaLaunched) {
+        console.log('Captcha already launched by user, skipping auto-execution');
+        return true;
+      }
+      
       try {
+        // Check if the iframe is already visible/active
+        const captchaIframe = document.querySelector('.h-captcha iframe');
+        if (captchaIframe && captchaIframe.style.visibility === 'visible') {
+          console.log('Captcha appears to be already active');
+          captchaLaunched = true;
+          return true;
+        }
+        
+        // Check if there's any challenge window open
+        if (document.querySelector('iframe[src*="hcaptcha.com/captcha"]')) {
+          console.log('Challenge window detected, not re-launching');
+          captchaLaunched = true;
+          return true;
+        }
+        
+        // Execute if not already launched
         hcaptcha.execute(widgetId);
         updateStatus('Verification in progress...', 'loading');
+        captchaLaunched = true;
         return true;
       } catch (e) {
-        console.log('Execution attempt failed, will retry:', e);
-        executeAttempts++;
-        
-        if (executeAttempts < 5) {
-          setTimeout(() => attemptExecute(widgetId), 300);
-        } else {
-          updateStatus('Ready for verification', 'loading');
-        }
+        console.log('Execution attempt failed, will retry');
         return false;
       }
+    }
+    
+    // Observer to monitor user interaction with captcha
+    function setupCaptchaObserver() {
+      // Watch for user clicks on captcha elements
+      document.addEventListener('click', function(e) {
+        if (e.target.closest('.h-captcha') || e.target.tagName === 'IFRAME') {
+          captchaLaunched = true;
+          console.log('User interaction with captcha detected');
+        }
+      }, true);
+      
+      // Watch for iframe visibility changes
+      const captchaObserver = new MutationObserver((mutations) => {
+        mutations.forEach(mutation => {
+          if (mutation.target.tagName === 'IFRAME' && 
+              (mutation.target.src.includes('hcaptcha.com') || 
+               (mutation.target.parentElement && mutation.target.parentElement.classList.contains('h-captcha')))) {
+            captchaLaunched = true;
+          }
+        });
+      });
+      
+      // Start observing once hCaptcha elements exist
+      setTimeout(() => {
+        const hcaptchaEl = document.querySelector('.h-captcha');
+        if (hcaptchaEl) {
+          captchaObserver.observe(hcaptchaEl, { 
+            attributes: true, 
+            childList: true,
+            subtree: true 
+          });
+        }
+      }, 500);
     }
   
     function hcOnLoad() {
@@ -165,7 +267,7 @@
       }
       
       try {
-        // Use minimal parameters to avoid detection
+        // Set up optimal environment for captcha solving
         const widgetId = hcaptcha.render("captcha-widget", {
           sitekey: k,
           callback: function(token) {
@@ -174,36 +276,47 @@
             
             // Update status to success
             updateStatus('Verification complete', 'success');
-            
-            // Optional: You can send the token to your server here
-            console.log("Token generated");
           },
           'error-callback': function() {
             updateStatus('Verification error', 'error');
+            captchaLaunched = false; // Reset flag to allow retrying
           },
           'chalexpired-callback': function() {
             updateStatus('Challenge expired', 'loading');
+            captchaLaunched = false; // Reset flag to allow retrying
+          },
+          'open-callback': function() {
+            captchaLaunched = true; // Mark as launched when challenge opens
           }
         });
         
-        // Implement multiple execution strategies with increasing delays
-        // First attempt: immediate
-        setTimeout(() => {
-          if (!attemptExecute(widgetId)) {
-            // Try again after DOM is more likely ready
-            setTimeout(() => attemptExecute(widgetId), 200);
-          }
-        }, 50);
+        // Set up observer for user interactions
+        setupCaptchaObserver();
         
-        // Final fallback attempt with observer
+        // More reliable execution strategy with progressive delays
+        const executionAttempts = [100, 300, 600, 1000, 1500];
+        
+        executionAttempts.forEach((delay, index) => {
+          setTimeout(() => {
+            if (!captchaLaunched) {
+              attemptExecute(widgetId);
+            }
+          }, delay);
+        });
+        
+        // Watch for iframe to ensure proper styling
         const observer = new MutationObserver((mutations) => {
-          if (document.querySelector('.h-captcha iframe')) {
+          const captchaIframe = document.querySelector('.h-captcha iframe');
+          if (captchaIframe) {
+            // Center and optimize the captcha iframe
+            captchaIframe.style.margin = '0 auto';
+            
+            // Once we see the iframe, we can stop observing
             observer.disconnect();
-            attemptExecute(widgetId);
           }
         });
         
-        observer.observe(document.getElementById('captcha-widget'), {
+        observer.observe(document.body, {
           childList: true,
           subtree: true
         });
@@ -213,6 +326,17 @@
         console.error(e);
       }
     }
+    
+    // Apply additional centering and optimization when everything is loaded
+    window.addEventListener('load', function() {
+      // Force center any hCaptcha elements
+      const hcaptchaElements = document.querySelectorAll('.h-captcha');
+      hcaptchaElements.forEach(el => {
+        el.style.display = 'flex';
+        el.style.justifyContent = 'center';
+        el.style.margin = '0 auto';
+      });
+    });
   </script>
 </body>
 </html>
