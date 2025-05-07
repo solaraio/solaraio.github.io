@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Solar hCaptcha Harvester</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <script src="https://hcaptcha.com/1/api.js?onload=hcOnLoad&render=explicit" async defer></script>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100vh;
+      background: #090221;
+    }
+    #c {
+      position: absolute;
+      top: 0;
+      left: 0;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="c"></div>
+  <div id="token-response"></div> 
+  <script>
+    function hcOnLoad() {
+      const k = new URLSearchParams(location.search).get("sitekey");
+      if (k) {
+        // Render hCaptcha
+        const widgetId = hcaptcha.render("c", {
+          sitekey: k,
+          callback: function(token) {
+            document.getElementById("token-response").innerText = token;
+          }
+        });
+        
+        // Execute hCaptcha automatically after a short delay
+        setTimeout(function() {
+          hcaptcha.execute(widgetId);
+        }, 100);
+      }
+    }
+  </script>
+</body>
+</html>
