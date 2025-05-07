@@ -2,42 +2,183 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Solar hCaptcha Harvester</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solar hCaptcha</title>
   <link rel="icon" href="favicon.ico" type="image/x-icon">
   <script src="https://hcaptcha.com/1/api.js?onload=hcOnLoad&render=explicit" async defer></script>
   <style>
-    html, body {
-      margin: 0;
-      height: 100vh;
-      background: #090221;
+    :root {
+      --primary-color: #00E599;
+      --bg-dark: #090221;
+      --border-radius: 8px;
     }
-    #c {
-      position: absolute;
-      top: 0;
-      left: 0;
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Arial', sans-serif;
+    }
+    
+    html, body {
+      width: 360px;
+      height: 550px;
+      overflow: hidden;
+      background: var(--bg-dark);
+      color: white;
+    }
+    
+    .container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       padding: 20px;
+    }
+    
+    .logo-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 30px;
+      margin-top: 20px;
+    }
+    
+    .logo {
+      width: 120px;
+      height: auto;
+      margin-bottom: 10px;
+    }
+    
+    .captcha-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    #c {
+      margin-top: 20px;
+    }
+    
+    .status {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: var(--border-radius);
+      background: rgba(255, 255, 255, 0.1);
+      font-size: 14px;
+      text-align: center;
+      width: 100%;
+    }
+    
+    #token-response {
+      display: none;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+      background-color: #555;
+    }
+    
+    .status-indicator.loading {
+      background-color: #FFC107;
+      animation: pulse 1.5s infinite;
+    }
+    
+    .status-indicator.success {
+      background-color: var(--primary-color);
+    }
+    
+    .status-indicator.error {
+      background-color: #F44336;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
     }
   </style>
 </head>
 <body>
-  <div id="c"></div>
-  <div id="token-response"></div> 
+  <div class="container">
+    <div class="logo-container">
+      <img src="https://solaraio.github.io/logo.png" alt="Solar Logo" class="logo">
+    </div>
+    
+    <div class="captcha-container">
+      <div id="c"></div>
+      <div class="status">
+        <span class="status-indicator loading"></span>
+        <span id="status-text">Chargement du hCaptcha...</span>
+      </div>
+    </div>
+    
+    <div id="token-response"></div>
+  </div>
+  
   <script>
+    function updateStatus(message, type) {
+      const statusText = document.getElementById('status-text');
+      const indicator = document.querySelector('.status-indicator');
+      
+      statusText.textContent = message;
+      
+      indicator.classList.remove('loading', 'success', 'error');
+      indicator.classList.add(type);
+    }
+  
     function hcOnLoad() {
+      updateStatus('Initialisation du hCaptcha...', 'loading');
+      
       const k = new URLSearchParams(location.search).get("sitekey");
-      if (k) {
+      
+      if (!k) {
+        updateStatus('Erreur: Paramètre sitekey manquant', 'error');
+        return;
+      }
+      
+      try {
         // Render hCaptcha
         const widgetId = hcaptcha.render("c", {
           sitekey: k,
           callback: function(token) {
+            // Store token but don't display it visibly
             document.getElementById("token-response").innerText = token;
+            
+            // Update status to success
+            updateStatus('Vérification réussie!', 'success');
+            
+            // Optional: Send the token to your server or API here
+            console.log("Token generated:", token);
+          },
+          'error-callback': function() {
+            updateStatus('Erreur lors de la vérification', 'error');
+          },
+          'chalexpired-callback': function() {
+            updateStatus('Challenge expiré, rechargement...', 'loading');
           }
         });
         
         // Execute hCaptcha automatically after a short delay
         setTimeout(function() {
-          hcaptcha.execute(widgetId);
-        }, 100);
+          try {
+            hcaptcha.execute(widgetId);
+            updateStatus('Lancement de la vérification...', 'loading');
+          } catch (e) {
+            updateStatus('Erreur de lancement', 'error');
+            console.error(e);
+          }
+        }, 500);
+      } catch (e) {
+        updateStatus('Erreur d\'initialisation', 'error');
+        console.error(e);
       }
     }
   </script>
