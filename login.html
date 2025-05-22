@@ -5,56 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solar - Sign In</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #0a0f1c;
-            min-height: 100vh;
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
             overflow: hidden;
         }
 
-        /* Professional static background */
         .bg-pattern {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: fixed;
+            inset: 0;
             background: 
                 radial-gradient(circle at 20% 30%, rgba(0, 255, 163, 0.06) 0%, transparent 45%),
                 radial-gradient(circle at 80% 20%, rgba(0, 255, 163, 0.04) 0%, transparent 40%),
                 radial-gradient(circle at 60% 80%, rgba(0, 255, 163, 0.03) 0%, transparent 50%),
                 linear-gradient(135deg, #0a0f1c 0%, #0d1421 20%, #0f1826 40%, #0d1722 60%, #0a0f1c 80%, #0b1019 100%),
                 linear-gradient(25deg, rgba(0, 255, 163, 0.008) 0%, transparent 30%, rgba(0, 255, 163, 0.006) 70%, transparent 100%);
-            z-index: 1;
         }
 
         .bg-grid {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: fixed;
+            inset: 0;
             background-image: 
                 linear-gradient(rgba(0, 255, 163, 0.015) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(0, 255, 163, 0.015) 1px, transparent 1px);
             background-size: 80px 80px;
-            z-index: 1;
         }
 
         .container {
             position: relative;
-            z-index: 2;
+            z-index: 1;
             background: rgba(15, 24, 38, 0.95);
             border: 1px solid rgba(0, 255, 163, 0.15);
             border-radius: 20px;
@@ -63,41 +48,21 @@
             max-width: 420px;
             width: 90%;
             backdrop-filter: blur(10px);
-            box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
             animation: containerEnter 1s ease-out;
-            transition: transform 0.1s ease-out;
+            transition: transform 0.15s ease-out;
         }
 
         @keyframes containerEnter {
-            from {
-                opacity: 0;
-                transform: translateY(40px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .logo-container {
-            margin-bottom: 32px;
+            from { opacity: 0; transform: translateY(40px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .logo {
             width: 80px;
             height: 80px;
-            margin: 0 auto;
+            margin: 0 auto 32px;
             filter: drop-shadow(0 0 15px rgba(0, 255, 163, 0.3));
-        }
-
-        .brand-text {
-            margin-top: 16px;
-            color: #00ffa3;
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
         }
 
         h1 {
@@ -133,6 +98,7 @@
             font-size: 15px;
             font-weight: 500;
             text-decoration: none;
+            color: #ffffff;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
@@ -143,20 +109,15 @@
         .connect-btn::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
+            inset: 0 -100% 0 0;
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
-            transition: left 0.6s ease;
+            transition: transform 0.6s ease;
+            transform: translateX(-100%);
         }
 
-        .connect-btn:hover::before {
-            left: 100%;
-        }
+        .connect-btn:hover::before { transform: translateX(200%); }
 
         .whop-btn {
-            color: #ffffff;
             background: linear-gradient(135deg, rgba(0, 255, 163, 0.08), rgba(0, 255, 163, 0.04));
             border-color: rgba(0, 255, 163, 0.2);
         }
@@ -169,7 +130,6 @@
         }
 
         .discord-btn {
-            color: #ffffff;
             background: linear-gradient(135deg, rgba(88, 101, 242, 0.08), rgba(88, 101, 242, 0.04));
             border-color: rgba(88, 101, 242, 0.2);
         }
@@ -187,13 +147,8 @@
             transition: transform 0.3s ease;
         }
 
-        .connect-btn:hover .btn-icon {
-            transform: scale(1.1);
-        }
-
-        .discord-icon {
-            filter: brightness(0) invert(1);
-        }
+        .connect-btn:hover .btn-icon { transform: scale(1.1); }
+        .discord-icon { filter: brightness(0) invert(1); }
 
         .footer-text {
             margin-top: 32px;
@@ -202,86 +157,7 @@
             line-height: 1.4;
         }
 
-        /* Responsive design - No scroll on mobile */
-        @media (max-width: 480px) {
-            body {
-                height: 100vh;
-                overflow: hidden;
-            }
-            
-            .container {
-                padding: 24px 20px;
-                margin: 0 10px;
-                max-width: calc(100vw - 20px);
-                max-height: calc(100vh - 20px);
-                overflow-y: auto;
-            }
-
-            h1 {
-                font-size: 24px;
-                margin-bottom: 12px;
-            }
-
-            .subtitle {
-                font-size: 14px;
-                margin-bottom: 24px;
-                line-height: 1.4;
-            }
-
-            .logo {
-                width: 60px;
-                height: 60px;
-            }
-
-            .logo-container {
-                margin-bottom: 24px;
-            }
-
-            .connect-btn {
-                padding: 12px 16px;
-                font-size: 14px;
-                gap: 10px;
-            }
-
-            .btn-icon {
-                width: 18px;
-                height: 18px;
-            }
-
-            .footer-text {
-                margin-top: 24px;
-                font-size: 12px;
-            }
-        }
-
-        /* Very small screens */
-        @media (max-width: 360px) {
-            .container {
-                padding: 20px 16px;
-                margin: 0 8px;
-                max-width: calc(100vw - 16px);
-            }
-
-            h1 {
-                font-size: 22px;
-            }
-
-            .subtitle {
-                font-size: 13px;
-            }
-        }
-
-        /* Prevent zoom on iOS */
-        @media screen and (max-width: 480px) {
-            input, select, textarea, button {
-                font-size: 16px;
-            }
-        }
-
-        /* Loading states */
-        .connect-btn:active {
-            transform: scale(0.98);
-        }
+        .connect-btn:active { transform: scale(0.98); }
 
         .connect-btn.loading {
             pointer-events: none;
@@ -291,18 +167,32 @@
         .connect-btn.loading::after {
             content: '';
             position: absolute;
+            right: 16px;
             width: 16px;
             height: 16px;
             border: 2px solid transparent;
             border-top: 2px solid currentColor;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            right: 16px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .container { padding: 24px 20px; max-width: none; width: 100%; }
+            h1 { font-size: 24px; margin-bottom: 12px; }
+            .subtitle { font-size: 14px; margin-bottom: 24px; line-height: 1.4; }
+            .logo { width: 60px; height: 60px; margin-bottom: 24px; }
+            .connect-btn { padding: 12px 16px; font-size: 14px; gap: 10px; }
+            .btn-icon { width: 18px; height: 18px; }
+            .footer-text { margin-top: 24px; font-size: 12px; }
+        }
+
+        @media (max-width: 360px) {
+            .container { padding: 20px 16px; }
+            h1 { font-size: 22px; }
+            .subtitle { font-size: 13px; }
         }
     </style>
 </head>
@@ -311,9 +201,7 @@
     <div class="bg-grid"></div>
 
     <div class="container">
-        <div class="logo-container">
-            <img src="https://solaraio.github.io/logo.png" alt="Solar Logo" class="logo">
-        </div>
+        <img src="https://solaraio.github.io/logo.png" alt="Solar Logo" class="logo">
         
         <h1>Welcome to <span style="color: #00ffa3;">Solar</span></h1>
         <p class="subtitle">Select your preferred login method to continue</p>
@@ -330,84 +218,32 @@
             </a>
         </div>
 
-        <p class="footer-text">
-            © 2025 Solar Bot. All rights reserved.</a>
-        </p>
+        <p class="footer-text">© 2025 Solar Bot. All rights reserved.</p>
     </div>
 
     <script>
-        function connectWithWhop(button) {
-            button.classList.add('loading');
-            // Add your Whop connection logic here
-            console.log('Connecting with Whop...');
+        const connectWithWhop = btn => { btn.classList.add('loading'); setTimeout(() => btn.classList.remove('loading'), 2000); };
+        const connectWithDiscord = btn => { btn.classList.add('loading'); setTimeout(() => btn.classList.remove('loading'), 2000); };
+
+        if (window.innerWidth > 480) {
+            const c = document.querySelector('.container');
+            const reset = () => c.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
             
-            // Simulate loading
-            setTimeout(() => {
-                button.classList.remove('loading');
-                // window.location.href = 'your-whop-oauth-url';
-            }, 2000);
+            document.addEventListener('mousemove', e => {
+                const r = c.getBoundingClientRect();
+                const x = (e.clientX - r.left - r.width / 2) / r.width;
+                const y = (e.clientY - r.top - r.height / 2) / r.height;
+                c.style.transform = `perspective(1000px) rotateX(${-y * 2}deg) rotateY(${x * 2}deg)`;
+            });
+            
+            document.addEventListener('mouseleave', reset);
+            c.addEventListener('mouseleave', reset);
         }
 
-        function connectWithDiscord(button) {
-            button.classList.add('loading');
-            // Add your Discord connection logic here
-            console.log('Connecting with Discord...');
-            
-            // Simulate loading
-            setTimeout(() => {
-                button.classList.remove('loading');
-                // window.location.href = 'your-discord-oauth-url';
-            }, 2000);
-        }
-
-        // Prevent scrolling on mobile
-        document.addEventListener('touchmove', function(e) {
-            if (window.innerWidth <= 480) {
-                // Only allow scrolling within the container
-                if (!e.target.closest('.container')) {
-                    e.preventDefault();
-                }
-            }
-        }, { passive: false });
-
-        // Prevent bounce scroll on iOS
-        document.addEventListener('touchstart', function(e) {
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function(e) {
-            const now = (new Date()).getTime();
-            if (now - lastTouchEnd <= 300) {
-                e.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
-
-        // Enhanced interaction effects
-        document.addEventListener('DOMContentLoaded', function() {
-            const container = document.querySelector('.container');
-            
-            // Add subtle mouse tracking effect (only on desktop)
-            if (window.innerWidth > 480) {
-                document.addEventListener('mousemove', function(e) {
-                    const rect = container.getBoundingClientRect();
-                    const x = e.clientX - rect.left - rect.width / 2;
-                    const y = e.clientY - rect.top - rect.height / 2;
-                    
-                    const rotateX = (y / rect.height) * 1.2;
-                    const rotateY = (x / rect.width) * 1.2;
-                    
-                    container.style.transform = `perspective(1000px) rotateX(${rotateX * 1.5}deg) rotateY(${rotateY * 1.5}deg)`;
-                });
-                
-                // Reset transform when mouse leaves
-                document.addEventListener('mouseleave', function() {
-                    container.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
-                });
-            }
+        ['touchmove', 'touchstart', 'touchend'].forEach(e => {
+            document.addEventListener(e, ev => {
+                if (window.innerWidth <= 480 && !ev.target.closest('.container')) ev.preventDefault();
+            }, { passive: false });
         });
     </script>
 </body>
