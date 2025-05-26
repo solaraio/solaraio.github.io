@@ -2,39 +2,376 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Solar hCaptcha Harvester</title>
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
-
+  <link rel="icon" href="https://solaraio.github.io/logo.png" type="image/png">
   <script src="https://hcaptcha.com/1/api.js?onload=hcOnLoad&render=explicit" async defer></script>
   <style>
-    html, body {
+    * {
       margin: 0;
-      height: 100vh;
-      background: #090221;
+      padding: 0;
+      box-sizing: border-box;
     }
-    #c {
+    
+    html, body {
+      width: 375px;
+      height: 550px;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0f1c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+    }
+    
+    .bg-pattern {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(0, 255, 163, 0.06) 0%, transparent 45%),
+        radial-gradient(circle at 80% 20%, rgba(0, 255, 163, 0.04) 0%, transparent 40%),
+        linear-gradient(135deg, #0a0f1c 0%, #0d1421 20%, #0f1826 40%, #0d1722 60%, #0a0f1c 80%);
+    }
+    
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(0, 255, 163, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 163, 0.015) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+    
+    .container {
+      position: relative;
+      z-index: 1;
+      background: rgba(15, 24, 38, 0.95);
+      border: 1px solid rgba(0, 255, 163, 0.15);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      width: 350px;
+      max-height: 480px;
+    }
+    
+    .logo {
+      width: 50px;
+      height: 50px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .logo img {
+      width: 50px;
+      height: 50px;
+      filter: brightness(1.2) drop-shadow(0 0 10px rgba(0, 255, 163, 0.4));
+    }
+    
+    h1 {
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.3px;
+    }
+    
+    .subtitle {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    
+    #captcha-widget {
+      margin: 0 auto 16px;
+      display: flex;
+      justify-content: center;
+    }
+    
+    .status {
+      padding: 12px 18px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.15), rgba(15, 24, 38, 0.8));
+      border: 1px solid rgba(0, 255, 163, 0.12);
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      backdrop-filter: blur(12px);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    
+    .status::before {
+      content: '';
       position: absolute;
       top: 0;
-      left: 0;
-      padding: 20px;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 255, 163, 0.08), transparent);
+      transition: left 0.8s ease;
+    }
+    
+    .status.loading::before {
+      animation: statusShimmer 2s infinite;
+    }
+    
+    .status.success {
+      border-color: rgba(0, 255, 163, 0.3);
+      background: linear-gradient(135deg, rgba(0, 255, 163, 0.08), rgba(0, 255, 163, 0.04));
+      box-shadow: 0 4px 20px rgba(0, 255, 163, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      animation: successPulse 0.6s ease-out;
+    }
+    
+    .status.error {
+      border-color: rgba(239, 68, 68, 0.3);
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.04));
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      animation: errorShake 0.5s ease-out;
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #555;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    
+    .status-dot::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: inherit;
+      opacity: 0.3;
+      animation: dotRipple 2s infinite;
+    }
+    
+    .status-dot.loading {
+      background: linear-gradient(45deg, #FF9500, #ff8c00);
+      box-shadow: 0 0 12px rgba(255, 149, 0, 0.6);
+      animation: dotPulse 1.2s infinite;
+    }
+    
+    .status-dot.success {
+      background: linear-gradient(45deg, #00ffa3, #00cc82);
+      box-shadow: 0 0 12px rgba(0, 255, 163, 0.6);
+      animation: dotSuccess 0.6s ease-out;
+    }
+    
+    .status-dot.error {
+      background: linear-gradient(45deg, #ef4444, #dc2626);
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+      animation: dotError 0.4s ease-out;
+    }
+    
+    .h-captcha {
+      display: flex !important;
+      justify-content: center !important;
+      margin: 0 auto !important;
+    }
+    
+    #token-response {
+      display: none;
+    }
+    
+    @keyframes dotPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.8; }
+    }
+    
+    @keyframes dotSuccess {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes dotError {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      25% { transform: scale(1.1) rotate(-5deg); }
+      75% { transform: scale(1.1) rotate(5deg); }
+    }
+    
+    @keyframes dotRipple {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 0.8; }
+      100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+    }
+    
+    @keyframes statusShimmer {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    
+    @keyframes successPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes errorShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-2px); }
+      75% { transform: translateX(2px); }
     }
   </style>
 </head>
 <body>
-  <div id="c"></div>
-   <div id="token-response"></div> 
+  <div class="bg-pattern"></div>
+  <div class="bg-grid"></div>
+  
+  <div class="container">
+    <div class="logo">
+      <img src="https://solaraio.github.io/logo.png" alt="Solar Logo">
+    </div>
+    
+    <h1>Solar <span style="color: #00ffa3;">hCaptcha</span> Harvester</h1>
+    <p class="subtitle">Verification in progress...</p>
+    
+    <div id="captcha-widget"></div>
+    
+    <div class="status">
+      <div class="status-dot loading" id="status-dot"></div>
+      <span id="status-text">Initializing...</span>
+    </div>
+    
+    <div id="token-response"></div>
+  </div>
+  
   <script>
-    function hcOnLoad() {
-      const k = new URLSearchParams(location.search).get("sitekey");
-      if (k) {
-        hcaptcha.render("c", {
-          sitekey: k,
-          callback: function(token) {
-            document.getElementById("token-response").innerText = token; // Store token in the hidden div
-          }
-        });
+    let captchaWidgetId = null;
+    let captchaState = 'initializing';
+    
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const emoji = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'loading' ? '⏳' : 'ℹ️';
+      console.log(`[${timestamp}] ${emoji} ${message}`);
+    }
+    
+    function updateStatus(message, type) {
+      const statusElement = document.querySelector('.status');
+      const statusText = document.getElementById('status-text');
+      const dot = document.getElementById('status-dot');
+      
+      // Remove previous classes
+      statusElement.classList.remove('loading', 'success', 'error');
+      dot.classList.remove('loading', 'success', 'error');
+      
+      // Add new classes
+      statusElement.classList.add(type);
+      dot.classList.add(type);
+      statusText.textContent = message;
+      
+      log(message, type);
+    }
+    
+    function executeCaptha() {
+      if (!captchaWidgetId || captchaState === 'opened') return;
+      
+      try {
+        log('🚀 Executing hCaptcha challenge');
+        hcaptcha.execute(captchaWidgetId);
+        captchaState = 'opened';
+      } catch (e) {
+        log(`❌ Execution failed: ${e.message}`, 'error');
+        updateStatus('Verification error', 'error');
+        setTimeout(() => {
+          captchaState = 'ready';
+          executeCaptha();
+        }, 1000);
       }
     }
+    
+    function hcOnLoad() {
+      log('🔧 hCaptcha API loaded');
+      updateStatus('Preparing verification...', 'loading');
+      
+      const sitekey = new URLSearchParams(location.search).get("sitekey");
+      if (!sitekey) {
+        log('❌ Missing sitekey parameter', 'error');
+        updateStatus('Error: Missing sitekey', 'error');
+        return;
+      }
+      
+      log(`🔑 Using sitekey: ${sitekey.substring(0, 8)}...`);
+      
+      try {
+        captchaWidgetId = hcaptcha.render("captcha-widget", {
+          sitekey: sitekey,
+          theme: 'dark',
+          size: 'normal',
+          callback: function(token) {
+            document.getElementById("token-response").innerText = token;
+            log(`✅ Token received: ${token.substring(0, 20)}...`, 'success');
+            updateStatus('Verification complete', 'success');
+            captchaState = 'success';
+          },
+          'error-callback': function(error) {
+            log(`❌ hCaptcha error: ${error}`, 'error');
+            updateStatus('Verification error', 'error');
+            setTimeout(() => {
+              captchaState = 'ready';
+              executeCaptha();
+            }, 1500);
+          },
+          'expired-callback': function() {
+            log('⏰ Challenge expired', 'loading');
+            updateStatus('Verification expired', 'loading');
+            captchaState = 'ready';
+            setTimeout(executeCaptha, 800);
+          },
+          'chalexpired-callback': function() {
+            log('⏰ Challenge expired (chalexpired)', 'loading');
+            updateStatus('Challenge expired', 'loading');
+            captchaState = 'ready';
+            setTimeout(executeCaptha, 800);
+          },
+          'open-callback': function() {
+            log('📱 Challenge modal opened');
+            updateStatus('Challenge opened', 'loading');
+            captchaState = 'opened';
+          },
+          'close-callback': function() {
+            log('🔒 Challenge modal closed');
+            if (captchaState !== 'success') {
+              updateStatus('Awaiting verification...', 'loading');
+              captchaState = 'ready';
+              setTimeout(executeCaptha, 1200);
+            }
+          }
+        });
+        
+        log(`🎯 Widget rendered with ID: ${captchaWidgetId}`);
+        updateStatus('Ready for verification...', 'loading');
+        captchaState = 'ready';
+        setTimeout(executeCaptha, 300);
+        
+      } catch (e) {
+        log(`❌ Initialization error: ${e.message}`, 'error');
+        updateStatus('Initialization error', 'error');
+        console.error(e);
+      }
+    }
+    
+    // Prevent scrolling
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    
+    log('🌟 Solar hCaptcha Harvester initialized');
   </script>
 </body>
 </html>
