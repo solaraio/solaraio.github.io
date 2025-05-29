@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Bot - Loading</title>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        html, body {
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            width: 100vw;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body {
+            background-color: rgba(0, 0, 0, 0);
+        }
+
+        .loader-container {
+            position: relative;
+            z-index: 1;
+            background: rgba(15, 24, 38, 0.98);
+            border: 1px solid rgba(0, 255, 163, 0.12);
+            border-radius: 20px;
+            padding: 36px 32px 32px;
+            text-align: center;
+            max-width: 360px;
+            width: 76%;
+            backdrop-filter: blur(20px);
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.02),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        }
+
+        .logo-section {
+            margin-bottom: 28px;
+            position: relative;
+        }
+
+        .logo {
+            width: 68px;
+            height: 68px;
+            margin: 0 auto 14px;
+            background: linear-gradient(135deg, rgba(0, 255, 163, 0.1), rgba(0, 255, 163, 0.05));
+            border: 1px solid rgba(0, 255, 163, 0.2);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 8px 32px rgba(0, 255, 163, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .logo img {
+            width: 42px;
+            height: 42px;
+            object-fit: contain;
+        }
+
+        .app-title {
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            letter-spacing: -0.8px;
+        }
+
+        .app-version {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 28px;
+            letter-spacing: 0.5px;
+        }
+
+        .loading-section {
+            margin-bottom: 28px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            margin-bottom: 18px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00ffa3, #00e691, #00ffa3);
+            background-size: 200% 100%;
+            border-radius: 12px;
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            animation: progressShimmer 2s infinite linear;
+        }
+
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.4), 
+                transparent
+            );
+            animation: progressGlow 1.5s infinite;
+        }
+
+        .progress-bar.complete {
+            animation: progressComplete 0.6s ease-out forwards;
+        }
+
+        @keyframes progressShimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes progressGlow {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes progressComplete {
+            0% { 
+                box-shadow: 0 0 10px rgba(0, 255, 163, 0.3);
+            }
+            50% { 
+                box-shadow: 0 0 25px rgba(0, 255, 163, 0.8);
+                transform: scale(1.02);
+            }
+            100% { 
+                box-shadow: 0 0 15px rgba(0, 255, 163, 0.5);
+                transform: scale(1);
+            }
+        }
+
+        .status-text {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 7px;
+            min-height: 22px;
+            transition: all 0.3s ease;
+        }
+
+        .status-details {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+            font-weight: 500;
+            min-height: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .steps-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 22px;
+            padding: 0 14px;
+            position: relative;
+        }
+
+        .steps-background-line {
+            position: absolute;
+            top: 13px;
+            left: 27px;
+            right: 27px;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent 0%,
+                rgba(0, 255, 163, 0.1) 10%,
+                rgba(0, 255, 163, 0.3) 50%,
+                rgba(0, 255, 163, 0.1) 90%,
+                transparent 100%
+            );
+            border-radius: 1px;
+            z-index: 0;
+            box-shadow: 0 0 8px rgba(0, 255, 163, 0.1);
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            position: relative;
+            flex: 1;
+            z-index: 1;
+        }
+
+        .step-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s ease;
+            position: relative;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 24, 38, 0.95);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .step-icon.pending {
+            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(15, 24, 38, 0.95);
+        }
+
+        .step-icon.active {
+            border-color: rgba(0, 255, 163, 0.6);
+            background: rgba(15, 24, 38, 0.95);
+            box-shadow: 
+                0 3px 10px rgba(0, 0, 0, 0.3),
+                0 0 14px rgba(0, 255, 163, 0.4);
+        }
+
+        .step-icon.completed {
+            border-color: #00ffa3;
+            background: linear-gradient(135deg, #00ffa3, #00cc82);
+            box-shadow: 
+                0 3px 10px rgba(0, 0, 0, 0.3),
+                0 0 14px rgba(0, 255, 163, 0.3);
+        }
+
+        .step-icon svg {
+            width: 13px;
+            height: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .step-icon.pending svg {
+            stroke: rgba(255, 255, 255, 0.3);
+        }
+
+        .step-icon.active svg {
+            stroke: #00ffa3;
+        }
+
+        .step-icon.completed svg {
+            stroke: #0a0f1c;
+            stroke-width: 2.5;
+        }
+
+        .status-text.error {
+            color: #ff4757;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .status-details.error {
+            color: rgba(255, 71, 87, 0.9);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .step-icon.error {
+            border-color: #ff4757;
+            background: rgba(15, 24, 38, 0.95);
+            box-shadow: 
+                0 3px 10px rgba(0, 0, 0, 0.3),
+                0 0 14px rgba(255, 71, 87, 0.4);
+            animation: errorShake 0.5s ease-in-out;
+        }
+
+        @keyframes errorShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+
+        .step-icon.error svg {
+            stroke: #ff4757;
+        }
+
+        .dots {
+            display: inline-block;
+            width: 18px;
+            text-align: left;
+        }
+
+        .loading-dots {
+            animation: loadingDots 1.5s infinite;
+        }
+
+        @keyframes loadingDots {
+            0%, 20% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .loading-dots:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots:nth-child(3) { animation-delay: 0.4s; }
+
+        @media (max-width: 480px) {
+            .loader-container {
+                padding: 28px 22px 25px;
+                max-width: none;
+                width: calc(100% - 36px);
+                border-radius: 14px;
+            }
+
+            .logo {
+                width: 56px;
+                height: 56px;
+                margin-bottom: 12px;
+            }
+
+            .logo img {
+                width: 34px;
+                height: 34px;
+            }
+
+            .app-title {
+                font-size: 24px;
+            }
+
+            .status-text {
+                font-size: 14px;
+            }
+
+            .status-details {
+                font-size: 12px;
+            }
+
+            .steps-container {
+                padding: 0 7px;
+                margin-top: 18px;
+            }
+
+            .step-icon {
+                width: 22px;
+                height: 22px;
+            }
+
+            .step-icon svg {
+                width: 11px;
+                height: 11px;
+            }
+
+            .steps-background-line {
+                left: 22px;
+                right: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loader-container">
+        <div class="logo-section">
+            <div class="logo">
+                <img src="https://solaraio.github.io/logo.png" alt="Solar Bot Logo">
+            </div>
+            <h1 class="app-title">Solar Bot</h1>
+            <div class="app-version">Version 2.1.4</div>
+        </div>
+
+        <div class="loading-section">
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div class="status-text" id="statusText">Initializing application</div>
+            <div class="status-details" id="statusDetails">Please wait while we prepare your workspace</div>
+        </div>
+
+        <div class="steps-container">
+            <div class="steps-background-line"></div>
+            
+            <div class="step">
+                <div class="step-icon pending" id="step1">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <polyline points="3.27,6.96 12,12.01 20.73,6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-icon pending" id="step2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <circle cx="12" cy="16" r="1"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-icon pending" id="step3">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10,9 9,9 8,9"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-icon pending" id="step4">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22,4 12,14.01 9,11.01"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SolarLoader {
+            constructor() {
+                this.currentStep = 0;
+                this.hasError = false;
+                
+                this.steps = [
+                    {
+                        text: "Retrieving application data",
+                        details: "Loading configuration and user preferences",
+                    },
+                    {
+                        text: "Verifying license key",
+                        details: "Authenticating your subscription",
+                    },
+                    {
+                        text: "Checking system files",
+                        details: "Validating application integrity",
+                    },
+                    {
+                        text: "Checking for updates",
+                        details: "Ensuring you have the latest version",
+                    }
+                ];
+            }
+
+            init() {
+                this.updateProgress(0);
+                this.processStep(0);
+            }
+
+            async processStep(stepIndex) {
+                if (stepIndex >= this.steps.length || this.hasError) return;
+                
+                this.setActiveStep(stepIndex);
+                this.updateStatusText(stepIndex);
+                
+                try {
+                    const result = await this.callPythonStep(stepIndex);
+                    
+                    if (result.success) {
+                        if (result.message) {
+                            const statusDetails = document.getElementById('statusDetails');
+                            statusDetails.textContent = result.message;
+                        }
+                        
+                        // Show filename for 1s if file was created
+                        if (result.filename) {
+                            const statusDetails = document.getElementById('statusDetails');
+                            statusDetails.textContent = `Created: ${result.filename}`;
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                        }
+                        
+                        // Handle update download
+                        if (result.update_download) {
+                            await this.showUpdateDownload();
+                        }
+                        
+                        this.completeStep(stepIndex);
+                        
+                        if (stepIndex + 1 < this.steps.length) {
+                            setTimeout(() => this.processStep(stepIndex + 1), 500);
+                        } else {
+                            this.complete();
+                        }
+                    } else {
+                        this.setErrorStep(stepIndex, "Step failed", result.message || "An error occurred");
+                        setTimeout(() => {
+                            if (window.pywebview && window.pywebview.api) {
+                                window.pywebview.api.close_app();
+                            }
+                        }, 4000);
+                    }
+                } catch (error) {
+                    this.setErrorStep(stepIndex, "Step failed", "Connection error occurred");
+                    setTimeout(() => {
+                        if (window.pywebview && window.pywebview.api) {
+                            window.pywebview.api.close_app();
+                        }
+                    }, 4000);
+                }
+            }
+
+            async showUpdateDownload() {
+                const statusText = document.getElementById('statusText');
+                const statusDetails = document.getElementById('statusDetails');
+                
+                statusText.textContent = "Downloading update";
+                statusDetails.textContent = "Installing latest version...";
+                
+                // Simulate download progress
+                for (let i = 0; i <= 100; i += 10) {
+                    statusDetails.textContent = `Installing update... ${i}%`;
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+
+            async callPythonStep(stepIndex) {
+                return new Promise((resolve) => {
+                    if (window.pywebview && window.pywebview.api) {
+                        window.pywebview.api.execute_step(stepIndex).then(resolve);
+                    } else {
+                        // Fallback for testing
+                        setTimeout(() => {
+                            resolve({ success: true, message: "" });
+                        }, 1000);
+                    }
+                });
+            }
+
+            setActiveStep(index) {
+                const stepIcon = document.getElementById(`step${index + 1}`);
+                
+                stepIcon.className = 'step-icon active';
+            }
+
+            setErrorStep(index, errorText, errorDetails) {
+                const stepIcon = document.getElementById(`step${index + 1}`);
+                const statusText = document.getElementById('statusText');
+                const statusDetails = document.getElementById('statusDetails');
+                
+                stepIcon.className = 'step-icon error';
+                
+                statusText.textContent = errorText;
+                statusText.className = 'status-text error';
+                statusDetails.textContent = errorDetails;
+                statusDetails.className = 'status-details error';
+                
+                this.hasError = true;
+            }
+
+            completeStep(index) {
+                const stepIcon = document.getElementById(`step${index + 1}`);
+                
+                stepIcon.className = 'step-icon completed';
+
+                // Update progress bar
+                const progress = ((index + 1) / this.steps.length) * 100;
+                this.updateProgress(progress);
+            }
+
+            updateStatusText(index) {
+                const step = this.steps[index];
+                const statusText = document.getElementById('statusText');
+                const statusDetails = document.getElementById('statusDetails');
+                
+                statusText.innerHTML = step.text + '<span class="dots"><span class="loading-dots">.</span><span class="loading-dots">.</span><span class="loading-dots">.</span></span>';
+                statusText.className = 'status-text';
+                statusDetails.textContent = step.details;
+                statusDetails.className = 'status-details';
+            }
+
+            updateProgress(percentage) {
+                const progressBar = document.getElementById('progressBar');
+                progressBar.style.width = percentage + '%';
+                
+                // Add completion animation when reaching 100%
+                if (percentage === 100) {
+                    progressBar.classList.add('complete');
+                }
+            }
+
+            complete() {
+                const statusText = document.getElementById('statusText');
+                const statusDetails = document.getElementById('statusDetails');
+                
+                statusText.textContent = 'Application ready';
+                statusText.className = 'status-text';
+                statusDetails.textContent = 'Welcome to Solar Bot! Starting up...';
+                statusDetails.className = 'status-details';
+                
+                this.updateProgress(100);
+                
+                // Notify Python that loading is complete
+                setTimeout(() => {
+                    if (window.pywebview && window.pywebview.api) {
+                        window.pywebview.api.loading_complete();
+                    }
+                }, 1000);
+            }
+        }
+
+        // Start the loader when the page loads
+        window.addEventListener('load', () => {
+            const loader = new SolarLoader();
+            loader.init();
+        });
+
+        // Prevent context menu and selection
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('selectstart', e => e.preventDefault());
+        document.addEventListener('dragstart', e => e.preventDefault());
+    </script>
+</body>
+</html>
